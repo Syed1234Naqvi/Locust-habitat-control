@@ -12,7 +12,7 @@
 #include<JeeLib.h>
 
 //lCount counts the current amount of times loop has passed
-int lCount = 100;
+int lCount = 0;
 int identifier = 0;
 
 void setup() {
