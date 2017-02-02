@@ -11,3 +11,6 @@ Current Identifier list:
 3: Send time down
 
 4:
+
+Current send time format:
+hours/minutes/seconds/days/months/years
