@@ -148,6 +148,7 @@ int recData(){
       c=false;
     }
   }
+  return data;
 }
 
 //func digitalClockDisplay display the current
