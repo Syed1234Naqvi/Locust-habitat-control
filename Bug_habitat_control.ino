@@ -12,12 +12,11 @@
 #include<JeeLib.h>
 
 //lCount counts the current amount of times loop has passed
-int lCount = 0;
+int lCount = 100;
 int identifier = 0;
 
 void setup() {
-  int data = 0;
-  int years,months,days;
+  TimeElements ccTimetm;
   
   //initialize serial port
   Serial.begin(115200);
@@ -30,25 +29,10 @@ void setup() {
   //initialize time
   setTime(12,0,0,24,01,2017);
   //initial sync
-  //years
-  sendData();
-  data = recData();
-  years = data;
-
-  //months
-  sendData();
-  data = recData();
-  months = data; 
-   
-  //days
-  sendData();
-  data = recData();
-  days = data; 
-
-  setTime(12,0,0,day,month,year);
-
-  sync();
-                           
+  sendTime();
+  ccTimetm =recTime();
+  
+  setTime(ccTimetm.Hour,ccTimetm.Minute,ccTimetm.Second,ccTimetm.Day,ccTimetm.Month,1970+ccTimetm.Year);                        
 }
 
 void loop() {
@@ -65,19 +49,24 @@ void loop() {
   if(rf12_recvDone())
   {
     memcpy(&identifier,(int*)rf12_data,sizeof(int));
-    if(identifier == 1)
+    if(identifier ==1)
+    {
+      //send time
+    }
+    if(identifier == 2)
     {
       //change time up
       timeUp();
     }
-    if(identifier == 2)
+    if(identifier == 3)
     {
       //change time down
       timeDown();
     }
-    if(identifier == 3)
+    if(identifier == 4)
     {
-      //possible something else?
+      //Full reset
+      tReset();
     }
   }
   
@@ -87,30 +76,29 @@ void loop() {
 }
 
 //func sync will get the current time from its counterpart module
+//Current sync function only syncs minutes and seconds
 void sync(){
-  int data = 0;
-  int hours,minutes,seconds;
-  
-  //hours
-  sendData();
-  data = recData();
-  hours = data;
-  
-  //minutes
-  sendData();
-  data = recData();
-  minutes = data;
+  TimeElements ccTimetm;
 
-  //seconds
-  sendData();
-  data = recData();
-  seconds = data;
+  sendTime();
+  ccTimetm = recTime();
 
-  setTime(hours,minutes,seconds,day(),month(),year());
+  setTime(hour(),ccTimetm.Minute,ccTimetm.Second,day(),month(),year());
 }
 
-//func sendData tells CC to send their data
-void sendData()
+//func tReset resets the time to the CC time
+void tReset()
+{
+  TimeElements ccTimetm;
+
+  sendTime();
+  ccTimetm = recTime();
+
+  setTime(ccTimetm.Hour,ccTimetm.Minute,ccTimetm.Second,ccTimetm.Day,ccTimetm.Month,ccTimetm.Year);
+}
+
+//func sendTime tells CC to send their time
+void sendTime()
 {
   bool c=true;
   
@@ -118,37 +106,39 @@ void sendData()
   {
     if(rf12_canSend())
     {
-      rf12_sendStart(0,&c,1);//tells CC to send time
+      rf12_sendStart(0,&c,1);//tells CC to send Time
       c=false;// turns off loop to exit
+      rf12_recvDone();//reactivates reciever
     }
-    rf12_recvDone();//reactivates reciever
   }
 }
 
-//func recData receives data from CC and checks if it is valid.
+//func recTime receives current time from CC and checks if it is valid.
 //if it is not, it attempts to get it again
-// returns the data received
-int recData(){
+//returns the time received in int
+TimeElements recTime(){
   bool c=true;
-  int data =0;
+  time_t ccTime;
+  TimeElements tm;
 
   while(c==true)
   {
     if(rf12_recvDone())//waiting on receiving data from CC
     {
       //output to serial for testing
-      memcpy(&data,(int*)rf12_data,sizeof(int));
-      Serial.println(data);
+      memcpy(&ccTime,(time_t*)rf12_data,sizeof(int));
+      //Serial.println(breakTime(cctime,tm));
+      breakTime(ccTime,tm);
       
       if(rf12_crc!=0)//if the data isn't reliable
       {
-        data = recData();
+        tm = recTime();
       }
       
+      return tm;
       c=false;
     }
   }
-  return data;
 }
 
 //func digitalClockDisplay display the current
