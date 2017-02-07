@@ -12,5 +12,4 @@ Current Identifier list:
 
 4:
 
-Current send time format:
-hours/minutes/seconds/days/months/years
+Current send time format: time_t variable type
