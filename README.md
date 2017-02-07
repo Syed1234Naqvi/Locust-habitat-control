@@ -1,6 +1,7 @@
 # Locust-habitat-control
 
-The files here contain the necessary programs needed to run the habitat control
+The files here contain the necessary programs needed to run the habitat control.
+It also contains current tasks and extra information on function
 
 ####Current Identifier list
 1. Send time
