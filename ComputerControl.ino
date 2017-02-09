@@ -8,6 +8,8 @@
 #include<TimeLib.h>
 #include<JeeLib.h>
 
+#define RF12_COMPAT 1
+
 
 int identifier = 0;
 
