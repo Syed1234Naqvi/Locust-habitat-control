@@ -3,7 +3,6 @@
 //and then send the information to the UI program
 //
 //Note: BC = Bug Control
-//Saad Test Change : TODO Delete this
 
 #include<TimeLib.h>
 #include<JeeLib.h>
