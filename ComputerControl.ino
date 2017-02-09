@@ -50,7 +50,7 @@ void loop() {
 time_t getTime()
 {
   /*//create TimeElements variable
-  tm total;
+  TimeElements total;
 
   //get the current time from the computer
   //note: this is specifically for a windows computer
