@@ -11,6 +11,8 @@
 #include<TimeLib.h>
 #include<JeeLib.h>
 
+#define RF12_COMPAT 1
+
 //lCount counts the current amount of times loop has passed
 int lCount = 100;
 int identifier = 0;
