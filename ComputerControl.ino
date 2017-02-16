@@ -6,15 +6,27 @@
 
 #include<TimeLib.h>
 #include<JeeLib.h>
+#define RF69_COMPAT 1
 
-#define RF12_COMPAT 1
-
-
-int identifier = 0;
+int identifier = 0,timeDif=0, writeCount=0,loopCounter=100,fileMonth=month();
+String fileTime = month()+"-"+year();
+int BCTime [6];//Current time formatting
+               //day,month,year,hour minutes, seconds
 
 void setup() {
+  //Serial setup
+  Serial.begin(19200);
   //command line notifier
   Serial.println("Computer control module start");
+
+  //initialize BCTime with current BCTime
+  BCTime[0] = day();
+  BCTime[1] = month();
+  BCTime[2] = year();
+  BCTime[3] = hour();
+  BCTime[4] = minute();
+  BCTime[5] = second();
+  
   
   //activate the RF module
   rf12_initialize(12,RF12_915MHZ,212);
@@ -27,8 +39,13 @@ void setup() {
 }
 
 void loop() {
-
+  //placeholder variables
+  int temp,humid;
+  //proper used
+  int sBit,diff,test;
   
+
+  //checking for what data type is being read from the wireless
   if(rf12_recvDone())
   {
     memcpy(&identifier,(int*)rf12_data,sizeof(int));
@@ -38,11 +55,113 @@ void loop() {
       sendTime();
     }
   }
+
+  //update the BCtime
+  if(BCTime[0]!=day())
+  {
+    BCTime[0]=day();
+  }
+  if(BCTime[1]!=month())
+  {
+    BCTime[0]=month();
+  }
+  if(BCTime[2]!=year())
+  {
+    BCTime[0]=year();
+  }
+  test = testwork();
+  if(BCTime[3]!=test)
+  {
+    if(hour()+timeDif<0)
+    {
+      diff = hour()+timeDif;
+      BCTime[3] = 24+diff;
+    }else if(hour()+timeDif>23)
+    {
+      diff = hour()+timeDif-23;
+      BCTime[3] = 0+diff;
+    }else
+    {
+      BCTime[3] = hour()+timeDif;
+    }
+  }
+  if(BCTime[4]!= minute())
+  {
+    BCTime[4]= minute();
+  }
+  if(BCTime[5]!=second())
+  {
+    BCTime[5]=second();
+  }
   
+  //reading in data from the USB port
+  if(loopCounter==50||loopCounter==100)
+  {
+    if(Serial.available()>0)//port has data to read
+    {
+      for(int i=0; i!=Serial.available();i++)//for each bit available to read
+      {
+        sBit = Serial.read();//up for revision, may require different
+                             //method for multiple bytes
+      }
+    }
+    //interpret the byte
+    if(sBit ==2)
+    {
+      //time up
+      timeUp();
+    }else if(sBit == 3)
+    {
+      //time down
+      timeDown();
+    }else if(sBit == 4)
+    {
+      //reset time
+      tReset();
+    }else
+    {
+      //what?
+    }
+  }
 
+  //Writing current data to the file for GUI processing
+  //current write time 10 seconds
+  if(loopCounter ==100)
+  {
+    if(fileMonth!=month())
+    {
+      fileMonth =month();
+    }
+    if(Serial.available()==0)
+    {
+      //Serial.write(
+    }
+    loopCounter=0;
+    writeCount++;
+  }
 
+  
   //current delay set as 0.1 second/s
   delay(100);
+}
+
+int testwork()
+{
+  int Test,diff;
+  if(hour()+timeDif<0)
+  {
+    diff = hour()+timeDif;
+    Test = 24+diff;
+  }else if(hour()+timeDif>23)
+  {
+    diff = hour()+timeDif-23;
+    Test = 0+diff;
+  }else
+  {
+    Test = hour()+timeDif;
+  }
+
+  return Test;
 }
 
 //function getTime gets the current time from the computer system
@@ -50,7 +169,7 @@ void loop() {
 time_t getTime()
 {
   /*//create TimeElements variable
-  TimeElements total;
+  tm total;
 
   //get the current time from the computer
   //note: this is specifically for a windows computer
@@ -85,9 +204,79 @@ void sendTime()
   }
 }
 
+//func TimeUp tells BC to change their time up by 1 hour
+void timeUp(){
+  bool c =true;
+  timeDif++;
+
+  if(BCTime[3]==23)
+  {
+    BCTime[3]=0;
+  }else
+  {
+    BCTime[3]++;
+  }
+  
+  while(c==true) 
+  {
+    if(rf12_canSend())
+    {
+      rf12_sendStart(0,&c,2);
+      c=false;
+    }
+    rf12_recvDone();//reactivates reciever
+  }
+}
+
+//func TimeDown tells BC to change their time down by 1 hour
+void timeDown(){
+  bool c =true;
+  timeDif--;
+
+  if(BCTime[3]==0)
+  {
+    BCTime[3]=23;
+  }else
+  {
+    BCTime[3]--;
+  }
+  
+  while(c==true) 
+  {
+    if(rf12_canSend())
+    {
+      rf12_sendStart(0,&c,3);
+      c=false;
+    }
+    rf12_recvDone();//reactivates reciever
+  }
+}
+
+//func tReset tells BC to change their time to the current time
+void tReset(){
+  bool c =true;
+
+  BCTime[0] = day();
+  BCTime[1] = month();
+  BCTime[2] = year();
+  BCTime[3] = hour();
+  BCTime[4] = minute();
+  BCTime[5] = second();
+  
+  while(c==true) 
+  {
+    if(rf12_canSend())
+    {
+      rf12_sendStart(0,&c,4);
+      c=false;
+    }
+    rf12_recvDone();//reactivates reciever
+  }
+}
+
 //func recData receives data from BC and checks if it is valid.
 //if it is not, it attempts to get it again
-// returns the data received
+//returns the data received
 int recData(){
   bool c=true;
   int data =0;
