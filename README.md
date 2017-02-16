@@ -20,7 +20,9 @@ Josh P.
 - [x]Change time capabilities
 - [x]Optimize send time format
 - [ ]Time management
-- [ ]Project design presentation
+- [x]Project design presentation
+- [ ]Write to file
+- [ ]Read from GUI
 
 Ian B.
 - []
