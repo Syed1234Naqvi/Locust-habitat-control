@@ -7,10 +7,9 @@
  * 
  * note: CC = ComputerControl
  */
-
+#define RF69_COMPAT 1
 #include<TimeLib.h>
 #include<JeeLib.h>
-#define RF69_COMPAT 1
 
 //lCount counts the current amount of times loop has passed
 int lCount = 100;
@@ -32,19 +31,15 @@ void setup() {
   //initial sync
   sendTime();
   ccTimetm =recTime();
+  //repeating sync
+  setSyncProvider(sync());
+  setSyncInterval(10);
   
   setTime(ccTimetm.Hour,ccTimetm.Minute,ccTimetm.Second,ccTimetm.Day,ccTimetm.Month,1970+ccTimetm.Year);                        
 }
 
 void loop() {
   lCount++;
-  
-  //current time for sync set for every 10 seconds
-  if(lCount==100)//heavily reliant on current loop, consider changing
-  {
-    lCount=0;
-    sync();
-  }
 
   //polling for signal
   if(rf12_recvDone())
@@ -102,12 +97,13 @@ void tReset()
 void sendTime()
 {
   bool c=true;
+  int i =1;
   
   while(c==true) 
   {
     if(rf12_canSend())
     {
-      rf12_sendStart(0,&c,1);//tells CC to send Time
+      rf12_sendStart(0,&i,sizeof(int));//tells CC to send Time
       c=false;// turns off loop to exit
       rf12_recvDone();//reactivates reciever
     }
@@ -138,6 +134,20 @@ TimeElements recTime(){
       
       return tm;
       c=false;
+    }
+  }
+}
+
+//func ccTimeSend() sends the current time in time_t format to cc
+void ccTimeSend()
+{
+  time_t t;
+  while(true)
+  {
+    if(rf12_canSend())
+    {
+      rf12_sendStart(0,&t,sizeof(int));
+      rf12_recvDone();
     }
   }
 }
