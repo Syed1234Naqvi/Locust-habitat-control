@@ -3,10 +3,9 @@
 //and then send the information to the UI program
 //
 //Note: BC = Bug Control
-
+#define RF69_COMPAT 1
 #include<TimeLib.h>
 #include<JeeLib.h>
-#define RF69_COMPAT 1
 
 int identifier = 0,timeDif=0, writeCount=0,loopCounter=100,fileMonth=month();
 String fileTime = month()+"-"+year();
@@ -19,7 +18,7 @@ void setup() {
   //command line notifier
   Serial.println("Computer control module start");
 
-  //initialize BCTime with current BCTime
+  //initialize BCTime with current CCTime
   BCTime[0] = day();
   BCTime[1] = month();
   BCTime[2] = year();
@@ -33,6 +32,7 @@ void setup() {
 
   //initialize time
   setTime(12,0,0,26,1,2017);
+  
   //set autosync
   setSyncProvider(getTime());
   setSyncInterval(10);
@@ -45,7 +45,7 @@ void loop() {
   int sBit,diff,test;
   
 
-  //checking for what data type is being read from the wireless
+  //checking for what data type is being read from the RF module
   if(rf12_recvDone())
   {
     memcpy(&identifier,(int*)rf12_data,sizeof(int));
@@ -56,43 +56,7 @@ void loop() {
     }
   }
 
-  //update the BCtime
-  if(BCTime[0]!=day())
-  {
-    BCTime[0]=day();
-  }
-  if(BCTime[1]!=month())
-  {
-    BCTime[0]=month();
-  }
-  if(BCTime[2]!=year())
-  {
-    BCTime[0]=year();
-  }
-  test = testwork();
-  if(BCTime[3]!=test)
-  {
-    if(hour()+timeDif<0)
-    {
-      diff = hour()+timeDif;
-      BCTime[3] = 24+diff;
-    }else if(hour()+timeDif>23)
-    {
-      diff = hour()+timeDif-23;
-      BCTime[3] = 0+diff;
-    }else
-    {
-      BCTime[3] = hour()+timeDif;
-    }
-  }
-  if(BCTime[4]!= minute())
-  {
-    BCTime[4]= minute();
-  }
-  if(BCTime[5]!=second())
-  {
-    BCTime[5]=second();
-  }
+  
   
   //reading in data from the USB port
   if(loopCounter==50||loopCounter==100)
@@ -145,7 +109,9 @@ void loop() {
   delay(100);
 }
 
-int testwork()
+
+//func timeRoll() tests to see if the hour has looped onto itself from 
+int timeRoll()
 {
   int Test,diff;
   if(hour()+timeDif<0)
@@ -168,6 +134,24 @@ int testwork()
 //its connected to
 time_t getTime()
 {
+  time_t t;
+  if(Serial.available()==0)
+  {
+    Serial.write(1);
+  }
+  
+  while(true)
+  {
+    if(Serial.available()>0)
+    {
+      t = Serial.read(); 
+      break;
+    }
+  }
+  return t;
+
+
+  //note commented code will be for GUI
   /*//create TimeElements variable
   tm total;
 
@@ -191,14 +175,14 @@ time_t getTime()
 //func sendTime tells sends the current time to BC
 void sendTime()
 {
-  int i=0;
+  time_t i;
   bool c=true;
-  
+  i = now();
   while(c==true) 
   {
     if(rf12_canSend())
     {
-      rf12_sendStart(0,&c,now());
+      rf12_sendStart(0,&i,sizeof(int));
     }
     rf12_recvDone();//reactivates reciever
   }
@@ -296,5 +280,7 @@ int recData(){
       
       c=false;
     }
+    
   }
+  return data;
 }
