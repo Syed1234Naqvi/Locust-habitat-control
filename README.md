@@ -10,7 +10,7 @@ It also contains current tasks and extra information on function
 4. Time reset
 
 ###Current send time format
-time_t variable type
+time_t variable type between 
 
 ###Current task List
 Josh P.
