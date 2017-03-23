@@ -9,6 +9,9 @@ It also contains current tasks and extra information on function
 3. Send time down
 4. Time reset
 
+####Computer Time File Format
+DD:MM:YYYY::HH:MM::SS
+
 ###Current send time format
 time_t variable type between 
 
